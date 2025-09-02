@@ -34,7 +34,11 @@
     .logo-viewer .nav:hover { background:rgba(0,0,0,0.6); }
     .logo-viewer .nav.prev { left:12px; }
     .logo-viewer .nav.next { right:12px; }
-    .thumb-strip { display:flex; gap:.5rem; overflow-x:auto; padding:1rem .25rem; margin-top:1rem; scrollbar-width:thin; }
+  .filter-bar { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:1.25rem; }
+  .filter-chip { border:0; background:#e3e6ec; color:#1c324e; padding:.55rem .95rem; border-radius:999px; cursor:pointer; font-size:.8rem; font-weight:500; letter-spacing:.5px; text-transform:uppercase; transition:background .25s, color .25s, box-shadow .25s; }
+  .filter-chip:hover { background:#d5dae3; }
+  .filter-chip.active { background:#1c324e; color:#fff; box-shadow:0 2px 6px rgba(0,0,0,0.15); }
+  .thumb-strip { display:flex; gap:.5rem; overflow-x:auto; padding:.85rem .25rem .85rem .25rem; scrollbar-width:thin; margin-top:.35rem; }
     .thumb-strip::-webkit-scrollbar { height:8px; }
     .thumb-strip::-webkit-scrollbar-track { background:transparent; }
     .thumb-strip::-webkit-scrollbar-thumb { background:#c3c3c3; border-radius:4px; }
@@ -72,7 +76,8 @@
         <img id="mainLogo" alt="Selected ARASAN Logo" src="" />
         <button class="nav next" type="button" aria-label="Next logo" title="Next">&#10095;</button>
       </div>
-      <div id="thumbStrip" class="thumb-strip" role="listbox" aria-label="Logo thumbnails carousel"></div>
+  <div class="filter-bar" id="groupFilters" role="tablist" aria-label="Logo groups filter"></div>
+  <div id="thumbStrip" class="thumb-strip" role="listbox" aria-label="Logo thumbnails"></div>
       <div class="logo-index-indicator" id="logoIndexIndicator"></div>
     </div>
   </div>
@@ -95,52 +100,104 @@
       } catch(e) { /* ignore storage errors */ }
 
       function initCarousel(){
-        // Static list of logo file paths (relative to index.html)
-        const logos = [
-          'logos/a1/a11.png','logos/a1/a12.png','logos/a1/a13.png',
-          'logos/a2/a21.png','logos/a2/a22.png','logos/a2/a23.png','logos/a2/a24.png','logos/a2/a25.png','logos/a2/a26.png','logos/a2/a27.png','logos/a2/a28.png',
-          'logos/a3/a31.png','logos/a3/a32.png','logos/a3/a33.png','logos/a3/a34.png',
-          'logos/a4/a41.png','logos/a4/a42.png','logos/a4/a43.png',
-          'logos/a5/a51.png','logos/a5/a52.png','logos/a5/a53.png',
-          'logos/a6/a61.png','logos/a6/a62.png','logos/a6/a63.png','logos/a6/a64.png','logos/a6/a65.png','logos/a6/a66.png'
-        ];
+        const grouped = {
+          'a1': ['logos/a1/a11.png','logos/a1/a12.png','logos/a1/a13.png'],
+          'a2': ['logos/a2/a21.png','logos/a2/a22.png','logos/a2/a23.png','logos/a2/a24.png','logos/a2/a25.png','logos/a2/a26.png','logos/a2/a27.png','logos/a2/a28.png'],
+          'a3': ['logos/a3/a31.png','logos/a3/a32.png','logos/a3/a33.png','logos/a3/a34.png'],
+          'a4': ['logos/a4/a41.png','logos/a4/a42.png','logos/a4/a43.png'],
+          'a5': ['logos/a5/a51.png','logos/a5/a52.png','logos/a5/a53.png'],
+          'a6': ['logos/a6/a61.png','logos/a6/a62.png','logos/a6/a63.png','logos/a6/a64.png','logos/a6/a65.png','logos/a6/a66.png']
+        };
+        const groupTitles = {
+          a1: 'A-Frame',
+          a2: 'Cats',
+          a3: 'Lotus',
+          a4: 'Elephant',
+          a5: 'House',
+          a6: 'Circle'
+        };
+        const order = Object.keys(grouped);
+        const allLogos = order.flatMap(k=> grouped[k]);
         const mainImg = document.getElementById('mainLogo');
+        const filterBar = document.getElementById('groupFilters');
         const thumbStrip = document.getElementById('thumbStrip');
         const indicator = document.getElementById('logoIndexIndicator');
         const prevBtn = document.querySelector('.logo-viewer .nav.prev');
         const nextBtn = document.querySelector('.logo-viewer .nav.next');
         let current = 0;
+        let activeFilter = 'all'; // 'all' or group key
+        let currentList = allLogos.slice();
 
-        function renderThumbs(){
-          logos.forEach((src, idx)=>{
-            const div = document.createElement('button');
-            div.type='button';
-            div.className = 'thumb';
-            div.setAttribute('role','option');
-            div.setAttribute('aria-label',`Logo ${idx+1} of ${logos.length}`);
-            const img = document.createElement('img');
-            img.src = src; img.alt = `Logo ${idx+1}`;
-            div.appendChild(img);
-            div.addEventListener('click', ()=> select(idx));
-            div.addEventListener('keydown', (e)=>{
-              if (e.key==='ArrowRight') { e.preventDefault(); select((idx+1)%logos.length,true); focusThumb((idx+1)%logos.length); }
-              else if (e.key==='ArrowLeft') { e.preventDefault(); select((idx-1+logos.length)%logos.length,true); focusThumb((idx-1+logos.length)%logos.length); }
-              else if (e.key==='Home') { e.preventDefault(); select(0,true); focusThumb(0); }
-              else if (e.key==='End') { e.preventDefault(); select(logos.length-1,true); focusThumb(logos.length-1); }
-            });
-            thumbStrip.appendChild(div);
+        function buildFilters(){
+          const filters = [{key:'all', label:'All'}].concat(order.map(k=>({key:k,label:groupTitles[k]||k})));
+          filters.forEach(f=>{
+            const btn = document.createElement('button');
+            btn.type='button';
+            btn.className='filter-chip'+(f.key==='all' ? ' active':'');
+            btn.setAttribute('role','tab');
+            btn.setAttribute('aria-selected', f.key==='all' ? 'true':'false');
+            btn.textContent = f.label;
+            btn.addEventListener('click', ()=> activateFilter(f.key));
+            filterBar.appendChild(btn);
           });
         }
 
+        function activateFilter(key){
+          if (activeFilter === key) return;
+            activeFilter = key;
+            [...filterBar.children].forEach(c=>{
+              const k = c.textContent.toLowerCase();
+              const isActive = (key==='all' && c.textContent==='All') || (groupTitles[key]===c.textContent);
+              c.classList.toggle('active', isActive);
+              c.setAttribute('aria-selected', isActive ? 'true':'false');
+            });
+            const previouslySelectedSrc = currentList[current];
+            currentList = key==='all' ? allLogos.slice() : grouped[key].slice();
+            rebuildThumbs();
+            let newIndex = 0;
+            if (previouslySelectedSrc){
+              const idx = currentList.indexOf(previouslySelectedSrc);
+              if (idx >=0) newIndex = idx;
+            }
+            select(newIndex);
+        }
+
+        function rebuildThumbs(){
+          thumbStrip.innerHTML='';
+          currentList.forEach((src, idx)=>{
+            const btn = document.createElement('button');
+            btn.type='button';
+            btn.className='thumb';
+            btn.setAttribute('role','option');
+            const groupKey = order.find(g=> grouped[g].includes(src));
+            btn.setAttribute('aria-label',`Logo ${idx+1} of ${currentList.length} (${groupTitles[groupKey]||groupKey})`);
+            const img = document.createElement('img');
+            img.src = src; img.alt = `${(groupTitles[groupKey]||groupKey)} logo ${idx+1}`;
+            btn.appendChild(img);
+            btn.addEventListener('click', ()=> select(idx));
+            btn.addEventListener('keydown', (e)=> handleThumbKey(e, idx));
+            thumbStrip.appendChild(btn);
+          });
+        }
+
+        function handleThumbKey(e, idx){
+          if (['ArrowRight','ArrowLeft','Home','End'].includes(e.key)) e.preventDefault();
+          if (e.key==='ArrowRight') { select((idx+1)%currentList.length,true); focusThumb((idx+1)%currentList.length); }
+          else if (e.key==='ArrowLeft') { select((idx-1+currentList.length)%currentList.length,true); focusThumb((idx-1+currentList.length)%currentList.length); }
+          else if (e.key==='Home') { select(0,true); focusThumb(0); }
+          else if (e.key==='End') { select(currentList.length-1,true); focusThumb(currentList.length-1); }
+        }
+
         function updateIndicator(){
-          indicator.textContent = `Showing ${current+1} of ${logos.length}`;
+          const groupLabel = activeFilter==='all' ? 'All Groups' : (groupTitles[activeFilter]||activeFilter);
+          indicator.textContent = `Showing ${current+1} of ${currentList.length} (${groupLabel})`;
         }
 
         function select(idx){
           current = idx;
           mainImg.style.opacity = 0;
           requestAnimationFrame(()=>{
-            mainImg.src = logos[idx];
+            mainImg.src = currentList[idx];
             mainImg.onload = ()=> { mainImg.style.opacity = 1; };
           });
           [...thumbStrip.children].forEach((c,i)=> c.classList.toggle('active', i===idx));
@@ -150,11 +207,11 @@
 
         function ensureVisible(idx){
           const el = thumbStrip.children[idx];
-            if (!el) return;
-            const rect = el.getBoundingClientRect();
-            const parentRect = thumbStrip.getBoundingClientRect();
-            if (rect.left < parentRect.left) thumbStrip.scrollBy({left: rect.left - parentRect.left - 8, behavior:'smooth'});
-            else if (rect.right > parentRect.right) thumbStrip.scrollBy({left: rect.right - parentRect.right + 8, behavior:'smooth'});
+          if (!el) return;
+          const rect = el.getBoundingClientRect();
+          const parentRect = thumbStrip.getBoundingClientRect();
+          if (rect.left < parentRect.left) thumbStrip.scrollBy({left: rect.left - parentRect.left - 8, behavior:'smooth'});
+          else if (rect.right > parentRect.right) thumbStrip.scrollBy({left: rect.right - parentRect.right + 8, behavior:'smooth'});
         }
 
         function focusThumb(idx){
@@ -162,16 +219,17 @@
           if (el) el.focus({preventScroll:true});
         }
 
-        prevBtn.addEventListener('click', ()=> select((current-1+logos.length)%logos.length));
-        nextBtn.addEventListener('click', ()=> select((current+1)%logos.length));
+        prevBtn.addEventListener('click', ()=> select((current-1+currentList.length)%currentList.length));
+        nextBtn.addEventListener('click', ()=> select((current+1)%currentList.length));
         document.addEventListener('keydown', (e)=>{
           if (content.style.display !== 'block') return;
           if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
-          if (e.key === 'ArrowLeft') { select((current-1+logos.length)%logos.length); }
-          else if (e.key === 'ArrowRight') { select((current+1)%logos.length); }
+          if (e.key==='ArrowLeft') select((current-1+currentList.length)%currentList.length);
+          else if (e.key==='ArrowRight') select((current+1)%currentList.length);
         });
 
-        renderThumbs();
+        buildFilters();
+        rebuildThumbs();
         select(0);
       }
 
