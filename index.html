@@ -8,16 +8,45 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Cinzel:wght@400;500;600;700&family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600;6..96,700&family=Jost:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Cormorant+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
-    :root { --bg: #FAF6E5; --accent:#234; --focus:#0066cc; }
+    :root {
+      --bg: #FAF6E5;
+      --panel-bg:#ffffff;
+      --panel-border: #ddd;
+      --text:#222;
+      --text-soft:#555;
+      --accent:#2c4d7f;
+      --accent-alt:#1c324e;
+      --focus:#0066cc;
+      --chip-bg:#e3e6ec;
+      --chip-bg-active:#1c324e;
+      --chip-text:#1c324e;
+      --chip-text-active:#ffffff;
+      --main-display-bg:#fafafa;
+    }
+    body.theme-dark {
+      --bg:#121417;
+      --panel-bg:#1c2229;
+      --panel-border:#2d3741;
+      --text:#e6eaed;
+      --text-soft:#b3bcc4;
+      --accent:#4b7ec7;
+      --accent-alt:#2c5a99;
+      --chip-bg:#2a313a;
+      --chip-bg-active:#4b7ec7;
+      --chip-text:#d0d6dc;
+      --chip-text-active:#ffffff;
+      --main-display-bg:#202830;
+    }
     body {
       margin:0;
       overflow: auto;
       font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
       background: var(--bg);
-      color:#222;
+      color: var(--text);
       -webkit-font-smoothing: antialiased;
+      transition: background .4s, color .3s;
     }
-  #authGate, #protectedContent { max-width:720px; padding:2rem 2.5rem; background:#fff; border-radius:16px; box-shadow:0 4px 14px rgba(0,0,0,0.08); }
+  #authGate, #protectedContent { max-width:720px; padding:2rem 2.5rem; background:var(--panel-bg); border:1px solid var(--panel-border); border-radius:16px; box-shadow:0 4px 14px rgba(0,0,0,0.08); transition: background .4s, border-color .4s; }
   #authGate { margin:4rem auto; }
   #protectedContent { margin:4rem auto 4rem; }
     h1,h2 { font-weight:500; letter-spacing:.5px; margin-top:0; }
@@ -30,7 +59,7 @@
     @media (max-width:560px){ #authGate, #protectedContent { margin:2rem 1rem; padding:1.5rem 1.25rem; } }
     /* Carousel / viewer styles */
     .logo-viewer { margin-top:2rem; }
-  .logo-viewer .main-display { position:relative; display:flex; align-items:center; justify-content:center; background:#fafafa; border:1px solid #ddd; border-radius:16px; padding:1.5rem; padding-bottom:6rem; min-height:280px; }
+  .logo-viewer .main-display { position:relative; display:flex; align-items:center; justify-content:center; background:var(--main-display-bg); border:1px solid var(--panel-border); border-radius:16px; padding:1.5rem; padding-bottom:6rem; min-height:280px; transition: background .4s, border-color .4s; }
   .logo-viewer .main-display .logo-title { position:absolute; bottom:3.5rem; left:0; right:0; text-align:center; font-size:3rem; font-weight:700; letter-spacing:4px; color:#333; pointer-events:none; font-family:inherit; }
   @media (max-width:560px){ .logo-viewer .main-display { padding-bottom:4.5rem; } .logo-viewer .main-display .logo-title { font-size:1.6rem; letter-spacing:3px; bottom:3rem; } }
     .logo-viewer .main-display img { max-width:100%; max-height:360px; width:auto; height:auto; object-fit:contain; transition:opacity .3s ease; }
@@ -49,20 +78,24 @@
   .picker-label { font-size:.65rem; font-weight:600; text-transform:uppercase; letter-spacing:.6px; color:#666; margin:1rem 0 .35rem; }
   @media (max-width:560px){ .bg-btn { font-size:.62rem; padding:.5rem .6rem; } }
   .filter-bar { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:1.25rem; }
-  .filter-chip { border:0; background:#e3e6ec; color:#1c324e; padding:.55rem .95rem; border-radius:999px; cursor:pointer; font-size:.8rem; font-weight:500; letter-spacing:.5px; text-transform:uppercase; transition:background .25s, color .25s, box-shadow .25s; }
-  .filter-chip:hover { background:#d5dae3; }
-  .filter-chip.active { background:#1c324e; color:#fff; box-shadow:0 2px 6px rgba(0,0,0,0.15); }
+  .filter-chip { border:0; background:var(--chip-bg); color:var(--chip-text); padding:.55rem .95rem; border-radius:999px; cursor:pointer; font-size:.8rem; font-weight:500; letter-spacing:.5px; text-transform:uppercase; transition:background .25s, color .25s, box-shadow .25s; }
+  .filter-chip:hover { filter:brightness(1.08); }
+  .filter-chip.active { background:var(--chip-bg-active); color:var(--chip-text-active); box-shadow:0 2px 6px rgba(0,0,0,0.25); }
   /* Font picker */
   .font-buttons { display:flex; flex-wrap:wrap; gap:.5rem; margin:.5rem 0 0; }
   .font-btn { border:0; background:#e7e9ed; color:#1c324e; padding:.6rem .9rem; border-radius:10px; cursor:pointer; font-size:.8rem; line-height:1; font-weight:500; letter-spacing:.5px; transition:background .25s, box-shadow .25s, transform .25s; }
   .font-btn:hover { background:#d9dce2; }
-  .font-btn.active { background:#1c324e; color:#fff; box-shadow:0 2px 6px rgba(0,0,0,0.15); }
+  .font-btn.active { background:var(--chip-bg-active); color:#fff; box-shadow:0 2px 6px rgba(0,0,0,0.25); }
   .font-btn:focus-visible { outline:3px solid var(--focus); outline-offset:2px; }
   /* Font color picker */
   .font-color-buttons { display:flex; flex-wrap:wrap; gap:.5rem; margin:.5rem 0 0; }
   .font-color-btn { position:relative; border:2px solid transparent; padding:.55rem .85rem; border-radius:14px; cursor:pointer; font-size:.65rem; font-weight:600; letter-spacing:.5px; font-family:inherit; display:inline-flex; align-items:center; justify-content:center; background:#eee; color:#111; box-shadow:0 2px 4px rgba(0,0,0,0.08); transition:box-shadow .25s, transform .25s, border-color .25s; min-width:88px; }
   .font-color-btn:hover { transform:translateY(-3px); box-shadow:0 4px 10px rgba(0,0,0,0.15); }
-  .font-color-btn.active { border-color:#1c324e; box-shadow:0 0 0 3px rgba(44,77,127,.35); }
+  .font-color-btn.active { border-color:var(--accent-alt); box-shadow:0 0 0 3px rgba(44,77,127,.35); }
+  /* Theme toggle */
+  .theme-toggle-btn { position:fixed; top:.75rem; right:.75rem; z-index:1200; background:var(--panel-bg); color:var(--text); border:1px solid var(--panel-border); padding:.55rem .9rem; border-radius:999px; font-size:.75rem; letter-spacing:.5px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:.4rem; box-shadow:0 2px 6px rgba(0,0,0,0.25); backdrop-filter:blur(6px); transition:background .35s, color .35s, border-color .35s, transform .25s; }
+  .theme-toggle-btn:hover { transform:translateY(-2px); }
+  body.theme-dark .theme-toggle-btn { box-shadow:0 2px 10px rgba(0,0,0,0.5); }
   .font-color-btn.light-text { color:#fff; text-shadow:0 1px 2px rgba(0,0,0,0.55); }
   /* Disclaimer */
   .disclaimer { margin-top:3rem; font-size:.7rem; line-height:1.4; color:#666; text-align:center; border-top:1px solid #e2e2e2; padding-top:1.25rem; }
@@ -86,6 +119,7 @@
   </style>
 </head>
 <body>
+  <button id="themeToggle" class="theme-toggle-btn" type="button" aria-pressed="false" aria-label="Toggle dark mode">🌙 Dark</button>
   <div id="authGate">
     <h2>Enter Passcode</h2>
     <form id="passcodeForm" autocomplete="off">
@@ -96,7 +130,7 @@
   </div>
 
   <div id="protectedContent" style="display:none;">
-    <h1>Welcome to the ARASAN Logo Showcase</h1>
+  <h1>Welcome to the ARASAN Logo Showcase</h1>
     <!-- Future protected logo content can go here -->
     <div id="logoViewer" class="logo-viewer" aria-live="polite" aria-label="ARASAN Logo Viewer">
       <div class="main-display">
@@ -130,6 +164,33 @@
       const error = document.getElementById('errorMsg');
       const gate = document.getElementById('authGate');
       const content = document.getElementById('protectedContent');
+      const themeToggle = document.getElementById('themeToggle');
+
+      // THEME: restore previous session selection
+      try {
+        const storedTheme = sessionStorage.getItem('theme');
+        if (storedTheme === 'dark') {
+          document.body.classList.add('theme-dark');
+          themeToggle.setAttribute('aria-pressed','true');
+          themeToggle.textContent = '☀️ Light';
+          themeToggle.setAttribute('aria-label','Toggle light mode');
+        }
+      } catch(e) { /* ignore */ }
+
+      function toggleTheme(){
+        const dark = document.body.classList.toggle('theme-dark');
+        if (dark){
+          themeToggle.textContent = '☀️ Light';
+          themeToggle.setAttribute('aria-label','Toggle light mode');
+          themeToggle.setAttribute('aria-pressed','true');
+        } else {
+          themeToggle.textContent = '🌙 Dark';
+          themeToggle.setAttribute('aria-label','Toggle dark mode');
+          themeToggle.setAttribute('aria-pressed','false');
+        }
+        try { sessionStorage.setItem('theme', dark ? 'dark':'light'); } catch(e) {}
+      }
+      themeToggle.addEventListener('click', toggleTheme);
 
       // If previously unlocked in this session, skip prompt
       try {
