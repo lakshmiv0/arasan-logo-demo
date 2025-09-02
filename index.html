@@ -29,6 +29,8 @@
     /* Carousel / viewer styles */
     .logo-viewer { margin-top:2rem; }
     .logo-viewer .main-display { position:relative; display:flex; align-items:center; justify-content:center; background:#fafafa; border:1px solid #ddd; border-radius:16px; padding:1.5rem; min-height:280px; }
+  .logo-viewer .main-display .logo-title { position:absolute; bottom:12px; left:0; right:0; text-align:center; font-size:2rem; font-weight:700; letter-spacing:4px; color:#333; pointer-events:none; font-family:inherit; }
+  @media (max-width:560px){ .logo-viewer .main-display .logo-title { font-size:1.6rem; letter-spacing:3px; bottom:8px; } }
     .logo-viewer .main-display img { max-width:100%; max-height:360px; width:auto; height:auto; object-fit:contain; transition:opacity .3s ease; }
     .logo-viewer .nav { position:absolute; top:50%; transform:translateY(-50%); background:rgba(0,0,0,0.45); color:#fff; border:0; width:42px; height:42px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1.3rem; backdrop-filter:blur(4px); }
     .logo-viewer .nav:hover { background:rgba(0,0,0,0.6); }
@@ -41,7 +43,8 @@
   .bg-btn:hover { transform:translateY(-3px); box-shadow:0 4px 10px rgba(0,0,0,0.15); }
   .bg-btn.active { border-color:#1c324e; box-shadow:0 0 0 3px rgba(44,77,127,.35); }
   .bg-btn.dark { color:#fafafa; text-shadow:0 1px 2px rgba(0,0,0,0.6); }
-  .bg-current { font-size:.75rem; color:#555; margin-bottom:.5rem; }
+  /* .bg-current removed per request */
+  .picker-label { font-size:.65rem; font-weight:600; text-transform:uppercase; letter-spacing:.6px; color:#666; margin:1rem 0 .35rem; }
   @media (max-width:560px){ .bg-btn { font-size:.62rem; padding:.5rem .6rem; } }
   .filter-bar { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:1.25rem; }
   .filter-chip { border:0; background:#e3e6ec; color:#1c324e; padding:.55rem .95rem; border-radius:999px; cursor:pointer; font-size:.8rem; font-weight:500; letter-spacing:.5px; text-transform:uppercase; transition:background .25s, color .25s, box-shadow .25s; }
@@ -84,11 +87,14 @@
         <button class="nav prev" type="button" aria-label="Previous logo" title="Previous">&#10094;</button>
         <img id="mainLogo" alt="Selected ARASAN Logo" src="" />
         <button class="nav next" type="button" aria-label="Next logo" title="Next">&#10095;</button>
+  <div class="logo-title">ARASAN</div>
       </div>
-  <div id="bgCurrent" class="bg-current" aria-live="polite" aria-atomic="true"></div>
-  <div class="bg-picker" id="bgPicker" aria-label="Background color options" role="toolbar"></div>
-  <div class="filter-bar" id="groupFilters" role="tablist" aria-label="Logo groups filter"></div>
-  <div id="thumbStrip" class="thumb-strip" role="listbox" aria-label="Logo thumbnails"></div>
+  <!-- Removed background status line -->
+  <div id="bgPickerLabel" class="picker-label">Background</div>
+  <div class="bg-picker" id="bgPicker" role="toolbar" aria-labelledby="bgPickerLabel"></div>
+  <div id="logoPickerLabel" class="picker-label">Logos</div>
+  <div class="filter-bar" id="groupFilters" role="tablist" aria-labelledby="logoPickerLabel"></div>
+  <div id="thumbStrip" class="thumb-strip" role="listbox" aria-labelledby="logoPickerLabel"></div>
       <div class="logo-index-indicator" id="logoIndexIndicator"></div>
     </div>
   </div>
@@ -139,7 +145,6 @@
         let activeFilter = 'all'; // 'all' or group key
         let currentList = allLogos.slice();
         const bgPicker = document.getElementById('bgPicker');
-        const bgCurrent = document.getElementById('bgCurrent');
         const mainDisplay = document.querySelector('.logo-viewer .main-display');
 
         const bgOptions = [
@@ -265,7 +270,6 @@
           mainDisplay.style.background = opt.hex;
           const dark = luminance(opt.hex) < 0.4;
           mainDisplay.style.borderColor = dark ? 'rgba(255,255,255,0.35)' : '#ddd';
-          bgCurrent.textContent = `Background: ${opt.name} (${opt.hex})`;
         }
 
         function contrastText(hex){
