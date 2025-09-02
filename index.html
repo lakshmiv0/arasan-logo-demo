@@ -6,7 +6,7 @@
   <title>ARASAN Logo Showcase (Embedded)</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Cinzel:wght@400;500;600;700&family=Bodoni+Moda:opsz,wght@6..96,400;6..96,500;6..96,600;6..96,700&family=Jost:wght@400;500;600;700&family=Manrope:wght@400;500;600;700&family=Cormorant+Garamond:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root { --bg: #FAF6E5; --accent:#234; --focus:#0066cc; }
     html, body { height:100%; }
@@ -29,7 +29,7 @@
     /* Carousel / viewer styles */
     .logo-viewer { margin-top:2rem; }
     .logo-viewer .main-display { position:relative; display:flex; align-items:center; justify-content:center; background:#fafafa; border:1px solid #ddd; border-radius:16px; padding:1.5rem; min-height:280px; }
-  .logo-viewer .main-display .logo-title { position:absolute; bottom:12px; left:0; right:0; text-align:center; font-size:2rem; font-weight:700; letter-spacing:4px; color:#333; pointer-events:none; font-family:inherit; }
+  .logo-viewer .main-display .logo-title { position:absolute; bottom:12px; left:0; right:0; text-align:center; font-size:3rem; font-weight:700; letter-spacing:4px; color:#333; pointer-events:none; font-family:inherit; }
   @media (max-width:560px){ .logo-viewer .main-display .logo-title { font-size:1.6rem; letter-spacing:3px; bottom:8px; } }
     .logo-viewer .main-display img { max-width:100%; max-height:360px; width:auto; height:auto; object-fit:contain; transition:opacity .3s ease; }
     .logo-viewer .nav { position:absolute; top:50%; transform:translateY(-50%); background:rgba(0,0,0,0.45); color:#fff; border:0; width:42px; height:42px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1.3rem; backdrop-filter:blur(4px); }
@@ -50,6 +50,12 @@
   .filter-chip { border:0; background:#e3e6ec; color:#1c324e; padding:.55rem .95rem; border-radius:999px; cursor:pointer; font-size:.8rem; font-weight:500; letter-spacing:.5px; text-transform:uppercase; transition:background .25s, color .25s, box-shadow .25s; }
   .filter-chip:hover { background:#d5dae3; }
   .filter-chip.active { background:#1c324e; color:#fff; box-shadow:0 2px 6px rgba(0,0,0,0.15); }
+  /* Font picker */
+  .font-buttons { display:flex; flex-wrap:wrap; gap:.5rem; margin:.5rem 0 0; }
+  .font-btn { border:0; background:#e7e9ed; color:#1c324e; padding:.6rem .9rem; border-radius:10px; cursor:pointer; font-size:.8rem; line-height:1; font-weight:500; letter-spacing:.5px; transition:background .25s, box-shadow .25s, transform .25s; }
+  .font-btn:hover { background:#d9dce2; }
+  .font-btn.active { background:#1c324e; color:#fff; box-shadow:0 2px 6px rgba(0,0,0,0.15); }
+  .font-btn:focus-visible { outline:3px solid var(--focus); outline-offset:2px; }
   .thumb-strip { display:flex; gap:.5rem; overflow-x:auto; padding:.85rem .25rem .85rem .25rem; scrollbar-width:thin; margin-top:.35rem; }
     .thumb-strip::-webkit-scrollbar { height:8px; }
     .thumb-strip::-webkit-scrollbar-track { background:transparent; }
@@ -92,6 +98,8 @@
   <!-- Removed background status line -->
   <div id="bgPickerLabel" class="picker-label">Background</div>
   <div class="bg-picker" id="bgPicker" role="toolbar" aria-labelledby="bgPickerLabel"></div>
+  <div id="fontPickerLabel" class="picker-label">Font</div>
+  <div id="fontPicker" class="font-buttons" role="toolbar" aria-labelledby="fontPickerLabel"></div>
   <div id="logoPickerLabel" class="picker-label">Logos</div>
   <div class="filter-bar" id="groupFilters" role="tablist" aria-labelledby="logoPickerLabel"></div>
   <div id="thumbStrip" class="thumb-strip" role="listbox" aria-labelledby="logoPickerLabel"></div>
@@ -308,6 +316,37 @@
         rebuildThumbs();
         select(0);
   buildBgPicker();
+        // Font picker
+        const fontPicker = document.getElementById('fontPicker');
+        const logoTitle = document.querySelector('.logo-title');
+        const fonts = [
+          {label:'Cinzel', family:"'Cinzel', serif"},
+            {label:'Bodoni Moda', family:"'Bodoni Moda', serif"},
+            {label:'Jost', family:"'Jost', sans-serif"},
+            {label:'Manrope', family:"'Manrope', sans-serif"},
+            {label:'Cormorant Garamond', family:"'Cormorant Garamond', serif"}
+        ];
+        function buildFontButtons(){
+          fontPicker.innerHTML='';
+          fonts.forEach((f, idx)=>{
+            const btn = document.createElement('button');
+            btn.type='button';
+            btn.className='font-btn'+(idx===0?' active':'');
+            btn.textContent = f.label;
+            btn.style.fontFamily = f.family;
+            btn.setAttribute('aria-label', `${f.label} font`);
+            btn.setAttribute('aria-pressed', idx===0 ? 'true':'false');
+            btn.addEventListener('click', ()=>{
+              [...fontPicker.children].forEach(c=>{ c.classList.remove('active'); c.setAttribute('aria-pressed','false'); });
+              btn.classList.add('active');
+              btn.setAttribute('aria-pressed','true');
+              logoTitle.style.fontFamily = f.family;
+            });
+            fontPicker.appendChild(btn);
+            if (idx===0) logoTitle.style.fontFamily = f.family;
+          });
+        }
+        buildFontButtons();
       }
 
       form.addEventListener('submit', function(e){
