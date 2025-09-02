@@ -26,6 +26,30 @@
     button:hover { filter:brightness(1.07); }
     button:active { transform:translateY(1px); }
     @media (max-width:560px){ #authGate, #protectedContent { margin:2rem 1rem; padding:1.5rem 1.25rem; } }
+    /* Carousel / viewer styles */
+    .logo-viewer { margin-top:2rem; }
+    .logo-viewer .main-display { position:relative; display:flex; align-items:center; justify-content:center; background:#fafafa; border:1px solid #ddd; border-radius:16px; padding:1.5rem; min-height:280px; }
+    .logo-viewer .main-display img { max-width:100%; max-height:360px; width:auto; height:auto; object-fit:contain; transition:opacity .3s ease; }
+    .logo-viewer .nav { position:absolute; top:50%; transform:translateY(-50%); background:rgba(0,0,0,0.45); color:#fff; border:0; width:42px; height:42px; border-radius:50%; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:1.3rem; backdrop-filter:blur(4px); }
+    .logo-viewer .nav:hover { background:rgba(0,0,0,0.6); }
+    .logo-viewer .nav.prev { left:12px; }
+    .logo-viewer .nav.next { right:12px; }
+    .thumb-strip { display:flex; gap:.5rem; overflow-x:auto; padding:1rem .25rem; margin-top:1rem; scrollbar-width:thin; }
+    .thumb-strip::-webkit-scrollbar { height:8px; }
+    .thumb-strip::-webkit-scrollbar-track { background:transparent; }
+    .thumb-strip::-webkit-scrollbar-thumb { background:#c3c3c3; border-radius:4px; }
+    .thumb { flex:0 0 auto; width:72px; height:72px; border:2px solid transparent; border-radius:12px; background:#fff; box-shadow:0 2px 6px rgba(0,0,0,0.08); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:border-color .25s, transform .25s; position:relative; }
+    .thumb img { max-width:100%; max-height:100%; object-fit:contain; }
+    .thumb:hover { transform:translateY(-3px); }
+    .thumb.active { border-color:#1c324e; box-shadow:0 0 0 3px rgba(44,77,127,.25); }
+    .thumb:focus-visible { outline:3px solid var(--focus); outline-offset:2px; }
+    .logo-index-indicator { margin-top:.75rem; font-size:.9rem; color:#555; text-align:center; }
+    .sr-only { position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0; }
+  
+    @media (max-width:560px){
+      .logo-viewer .main-display { min-height:200px; padding:1rem; }
+      .thumb { width:60px; height:60px; }
+    }
   </style>
 </head>
 <body>
@@ -42,11 +66,20 @@
     <h1>Welcome to the ARASAN Logo Showcase</h1>
     <p>This is a demonstration of the ARASAN logo in various formats.</p>
     <!-- Future protected logo content can go here -->
+    <div id="logoViewer" class="logo-viewer" aria-live="polite" aria-label="ARASAN Logo Viewer">
+      <div class="main-display">
+        <button class="nav prev" type="button" aria-label="Previous logo" title="Previous">&#10094;</button>
+        <img id="mainLogo" alt="Selected ARASAN Logo" src="" />
+        <button class="nav next" type="button" aria-label="Next logo" title="Next">&#10095;</button>
+      </div>
+      <div id="thumbStrip" class="thumb-strip" role="listbox" aria-label="Logo thumbnails carousel"></div>
+      <div class="logo-index-indicator" id="logoIndexIndicator"></div>
+    </div>
   </div>
 
   <script>
     (function() {
-      const PASSCODE = "ARASAN"; // Exact match required
+  const PASSCODE = "ARASAN"; // Exact match required (comparison is case-insensitive)
       const form = document.getElementById('passcodeForm');
       const input = document.getElementById('passcodeInput');
       const error = document.getElementById('errorMsg');
@@ -61,6 +94,87 @@
         }
       } catch(e) { /* ignore storage errors */ }
 
+      function initCarousel(){
+        // Static list of logo file paths (relative to index.html)
+        const logos = [
+          'logos/a1/a11.png','logos/a1/a12.png','logos/a1/a13.png',
+          'logos/a2/a21.png','logos/a2/a22.png','logos/a2/a23.png','logos/a2/a24.png','logos/a2/a25.png','logos/a2/a26.png','logos/a2/a27.png','logos/a2/a28.png',
+          'logos/a3/a31.png','logos/a3/a32.png','logos/a3/a33.png','logos/a3/a34.png',
+          'logos/a4/a41.png','logos/a4/a42.png','logos/a4/a43.png',
+          'logos/a5/a51.png','logos/a5/a52.png','logos/a5/a53.png',
+          'logos/a6/a61.png','logos/a6/a62.png','logos/a6/a63.png','logos/a6/a64.png','logos/a6/a65.png','logos/a6/a66.png'
+        ];
+        const mainImg = document.getElementById('mainLogo');
+        const thumbStrip = document.getElementById('thumbStrip');
+        const indicator = document.getElementById('logoIndexIndicator');
+        const prevBtn = document.querySelector('.logo-viewer .nav.prev');
+        const nextBtn = document.querySelector('.logo-viewer .nav.next');
+        let current = 0;
+
+        function renderThumbs(){
+          logos.forEach((src, idx)=>{
+            const div = document.createElement('button');
+            div.type='button';
+            div.className = 'thumb';
+            div.setAttribute('role','option');
+            div.setAttribute('aria-label',`Logo ${idx+1} of ${logos.length}`);
+            const img = document.createElement('img');
+            img.src = src; img.alt = `Logo ${idx+1}`;
+            div.appendChild(img);
+            div.addEventListener('click', ()=> select(idx));
+            div.addEventListener('keydown', (e)=>{
+              if (e.key==='ArrowRight') { e.preventDefault(); select((idx+1)%logos.length,true); focusThumb((idx+1)%logos.length); }
+              else if (e.key==='ArrowLeft') { e.preventDefault(); select((idx-1+logos.length)%logos.length,true); focusThumb((idx-1+logos.length)%logos.length); }
+              else if (e.key==='Home') { e.preventDefault(); select(0,true); focusThumb(0); }
+              else if (e.key==='End') { e.preventDefault(); select(logos.length-1,true); focusThumb(logos.length-1); }
+            });
+            thumbStrip.appendChild(div);
+          });
+        }
+
+        function updateIndicator(){
+          indicator.textContent = `Showing ${current+1} of ${logos.length}`;
+        }
+
+        function select(idx){
+          current = idx;
+          mainImg.style.opacity = 0;
+          requestAnimationFrame(()=>{
+            mainImg.src = logos[idx];
+            mainImg.onload = ()=> { mainImg.style.opacity = 1; };
+          });
+          [...thumbStrip.children].forEach((c,i)=> c.classList.toggle('active', i===idx));
+          updateIndicator();
+          ensureVisible(idx);
+        }
+
+        function ensureVisible(idx){
+          const el = thumbStrip.children[idx];
+            if (!el) return;
+            const rect = el.getBoundingClientRect();
+            const parentRect = thumbStrip.getBoundingClientRect();
+            if (rect.left < parentRect.left) thumbStrip.scrollBy({left: rect.left - parentRect.left - 8, behavior:'smooth'});
+            else if (rect.right > parentRect.right) thumbStrip.scrollBy({left: rect.right - parentRect.right + 8, behavior:'smooth'});
+        }
+
+        function focusThumb(idx){
+          const el = thumbStrip.children[idx];
+          if (el) el.focus({preventScroll:true});
+        }
+
+        prevBtn.addEventListener('click', ()=> select((current-1+logos.length)%logos.length));
+        nextBtn.addEventListener('click', ()=> select((current+1)%logos.length));
+        document.addEventListener('keydown', (e)=>{
+          if (content.style.display !== 'block') return;
+          if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
+          if (e.key === 'ArrowLeft') { select((current-1+logos.length)%logos.length); }
+          else if (e.key === 'ArrowRight') { select((current+1)%logos.length); }
+        });
+
+        renderThumbs();
+        select(0);
+      }
+
       form.addEventListener('submit', function(e){
         e.preventDefault();
         const val = (input.value || '').trim();
@@ -69,11 +183,17 @@
           content.style.display = 'block';
           error.style.display = 'none';
           try { sessionStorage.setItem('unlocked','1'); } catch(e) {}
+          initCarousel();
         } else {
           error.style.display = 'block';
           input.select();
         }
       });
+
+      // Initialize carousel if already unlocked (e.g., page refresh in session)
+      if (content.style.display === 'block') {
+        initCarousel();
+      }
     })();
   </script>
 </body>
