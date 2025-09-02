@@ -34,6 +34,15 @@
     .logo-viewer .nav:hover { background:rgba(0,0,0,0.6); }
     .logo-viewer .nav.prev { left:12px; }
     .logo-viewer .nav.next { right:12px; }
+  /* Background picker */
+  .bg-picker { display:flex; flex-wrap:wrap; gap:.5rem; margin:1rem 0 .25rem; }
+  .bg-picker-label { font-size:.8rem; font-weight:600; text-transform:uppercase; letter-spacing:.6px; color:#444; flex:1 0 100%; }
+  .bg-btn { position:relative; border:2px solid transparent; padding:.55rem .85rem; border-radius:14px; cursor:pointer; font-size:.7rem; font-weight:600; letter-spacing:.5px; font-family:inherit; display:inline-flex; align-items:center; justify-content:center; background:#eee; color:#111; box-shadow:0 2px 4px rgba(0,0,0,0.08); transition:box-shadow .25s, transform .25s, border-color .25s, filter .25s; min-width:92px; }
+  .bg-btn:hover { transform:translateY(-3px); box-shadow:0 4px 10px rgba(0,0,0,0.15); }
+  .bg-btn.active { border-color:#1c324e; box-shadow:0 0 0 3px rgba(44,77,127,.35); }
+  .bg-btn.dark { color:#fafafa; text-shadow:0 1px 2px rgba(0,0,0,0.6); }
+  .bg-current { font-size:.75rem; color:#555; margin-bottom:.5rem; }
+  @media (max-width:560px){ .bg-btn { font-size:.62rem; padding:.5rem .6rem; } }
   .filter-bar { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:1.25rem; }
   .filter-chip { border:0; background:#e3e6ec; color:#1c324e; padding:.55rem .95rem; border-radius:999px; cursor:pointer; font-size:.8rem; font-weight:500; letter-spacing:.5px; text-transform:uppercase; transition:background .25s, color .25s, box-shadow .25s; }
   .filter-chip:hover { background:#d5dae3; }
@@ -76,6 +85,8 @@
         <img id="mainLogo" alt="Selected ARASAN Logo" src="" />
         <button class="nav next" type="button" aria-label="Next logo" title="Next">&#10095;</button>
       </div>
+  <div id="bgCurrent" class="bg-current" aria-live="polite" aria-atomic="true"></div>
+  <div class="bg-picker" id="bgPicker" aria-label="Background color options" role="toolbar"></div>
   <div class="filter-bar" id="groupFilters" role="tablist" aria-label="Logo groups filter"></div>
   <div id="thumbStrip" class="thumb-strip" role="listbox" aria-label="Logo thumbnails"></div>
       <div class="logo-index-indicator" id="logoIndexIndicator"></div>
@@ -127,6 +138,19 @@
         let current = 0;
         let activeFilter = 'all'; // 'all' or group key
         let currentList = allLogos.slice();
+        const bgPicker = document.getElementById('bgPicker');
+        const bgCurrent = document.getElementById('bgCurrent');
+        const mainDisplay = document.querySelector('.logo-viewer .main-display');
+
+        const bgOptions = [
+          {hex:'#FAF6E5', name:'Cream'},
+          {hex:'#201F1B', name:'Matte Black'},
+          {hex:'#1F2732', name:'Navy'},
+          {hex:'#CDCBC5', name:'Charcoal'},
+          {hex:'#393B3C', name:'Grey'},
+          {hex:'#121210', name:'Black'},
+          {hex:'#212A29', name:'Green'}
+        ];
 
         function buildFilters(){
           const filters = [{key:'all', label:'All'}].concat(order.map(k=>({key:k,label:groupTitles[k]||k})));
@@ -228,9 +252,58 @@
           else if (e.key==='ArrowRight') select((current+1)%currentList.length);
         });
 
+        function luminance(hex){
+          const c = hex.replace('#','');
+          const r = parseInt(c.slice(0,2),16)/255;
+          const g = parseInt(c.slice(2,4),16)/255;
+          const b = parseInt(c.slice(4,6),16)/255;
+          const a=[r,g,b].map(v=> v<=0.03928? v/12.92: Math.pow((v+0.055)/1.055,2.4));
+          return 0.2126*a[0]+0.7152*a[1]+0.0722*a[2];
+        }
+
+        function applyBackground(opt){
+          mainDisplay.style.background = opt.hex;
+          const dark = luminance(opt.hex) < 0.4;
+          mainDisplay.style.borderColor = dark ? 'rgba(255,255,255,0.35)' : '#ddd';
+          bgCurrent.textContent = `Background: ${opt.name} (${opt.hex})`;
+        }
+
+        function contrastText(hex){
+          // WCAG relative luminance based contrast against both black and white
+          const L = luminance(hex);
+          const contrastBlack = (L + 0.05) / 0.05;
+          const contrastWhite = 1.05 / (L + 0.05);
+          return contrastWhite >= contrastBlack ? '#ffffff' : '#111111';
+        }
+
+        function buildBgPicker(){
+          bgPicker.innerHTML='';
+          bgOptions.forEach((opt, idx)=>{
+            const btn = document.createElement('button');
+            btn.type='button';
+            btn.className='bg-btn'+(idx===0?' active':'');
+            btn.style.background = opt.hex;
+            const txt = contrastText(opt.hex);
+            btn.style.color = txt;
+            if (txt === '#ffffff') btn.style.textShadow = '0 1px 2px rgba(0,0,0,0.55)';
+            btn.setAttribute('aria-label', `${opt.name} background ${opt.hex}`);
+            btn.dataset.hex = opt.hex;
+            btn.dataset.name = opt.name;
+            btn.textContent = opt.name;
+            btn.addEventListener('click', ()=>{
+              [...bgPicker.children].forEach(c=>c.classList.remove('active'));
+              btn.classList.add('active');
+              applyBackground(opt);
+            });
+            bgPicker.appendChild(btn);
+            if (idx===0) applyBackground(opt);
+          });
+        }
+
         buildFilters();
         rebuildThumbs();
         select(0);
+  buildBgPicker();
       }
 
       form.addEventListener('submit', function(e){
