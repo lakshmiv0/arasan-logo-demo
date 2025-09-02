@@ -4,9 +4,77 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>ARASAN Logo Showcase (Embedded)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg: #FAF6E5; --accent:#234; --focus:#0066cc; }
+    html, body { height:100%; }
+    body {
+      margin:0;
+      font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+      background: var(--bg);
+      color:#222;
+      -webkit-font-smoothing: antialiased;
+    }
+    #authGate, #protectedContent { max-width:720px; margin:4rem auto; padding:2rem 2.5rem; background:#fff; border-radius:16px; box-shadow:0 4px 14px rgba(0,0,0,0.08); }
+    h1,h2 { font-weight:500; letter-spacing:.5px; margin-top:0; }
+    form { display:flex; flex-wrap:wrap; gap:.75rem; align-items:center; }
+    input[type=password] { flex:1 1 220px; padding:.75rem 1rem; font-size:1rem; border:1px solid #c7c7c7; border-radius:10px; background:#f9f9f9; }
+    input[type=password]:focus { outline:2px solid var(--focus); outline-offset:2px; background:#fff; }
+    button { padding:.8rem 1.4rem; font-size:1rem; font-weight:500; border:0; background:linear-gradient(135deg,#2c4d7f,#1c324e); color:#fff; border-radius:12px; cursor:pointer; box-shadow:0 2px 6px rgba(0,0,0,0.15); }
+    button:hover { filter:brightness(1.07); }
+    button:active { transform:translateY(1px); }
+    @media (max-width:560px){ #authGate, #protectedContent { margin:2rem 1rem; padding:1.5rem 1.25rem; } }
+  </style>
 </head>
 <body>
-  <h1>Welcome to the ARASAN Logo Showcase</h1>
-  <p>This is a demonstration of the ARASAN logo in various formats.</p>
+  <div id="authGate">
+    <h2>Enter Passcode</h2>
+    <form id="passcodeForm" autocomplete="off">
+      <input type="password" id="passcodeInput" placeholder="Passcode" aria-label="Passcode" required />
+      <button type="submit">Unlock</button>
+      <p id="errorMsg" style="color:#b00020;display:none;margin-top:0.5rem;">Incorrect passcode.</p>
+    </form>
+  </div>
+
+  <div id="protectedContent" style="display:none;">
+    <h1>Welcome to the ARASAN Logo Showcase</h1>
+    <p>This is a demonstration of the ARASAN logo in various formats.</p>
+    <!-- Future protected logo content can go here -->
+  </div>
+
+  <script>
+    (function() {
+      const PASSCODE = "ARASAN"; // Exact match required
+      const form = document.getElementById('passcodeForm');
+      const input = document.getElementById('passcodeInput');
+      const error = document.getElementById('errorMsg');
+      const gate = document.getElementById('authGate');
+      const content = document.getElementById('protectedContent');
+
+      // If previously unlocked in this session, skip prompt
+      try {
+        if (sessionStorage.getItem('unlocked') === '1') {
+          gate.style.display = 'none';
+          content.style.display = 'block';
+        }
+      } catch(e) { /* ignore storage errors */ }
+
+      form.addEventListener('submit', function(e){
+        e.preventDefault();
+        const val = (input.value || '').trim();
+  if (val.toUpperCase() === PASSCODE) { // case-insensitive match
+          gate.style.display = 'none';
+          content.style.display = 'block';
+          error.style.display = 'none';
+          try { sessionStorage.setItem('unlocked','1'); } catch(e) {}
+        } else {
+          error.style.display = 'block';
+          input.select();
+        }
+      });
+    })();
+  </script>
 </body>
 </html>
