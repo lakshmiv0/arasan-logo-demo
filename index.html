@@ -56,6 +56,12 @@
   .font-btn:hover { background:#d9dce2; }
   .font-btn.active { background:#1c324e; color:#fff; box-shadow:0 2px 6px rgba(0,0,0,0.15); }
   .font-btn:focus-visible { outline:3px solid var(--focus); outline-offset:2px; }
+  /* Font color picker */
+  .font-color-buttons { display:flex; flex-wrap:wrap; gap:.5rem; margin:.5rem 0 0; }
+  .font-color-btn { position:relative; border:2px solid transparent; padding:.55rem .85rem; border-radius:14px; cursor:pointer; font-size:.65rem; font-weight:600; letter-spacing:.5px; font-family:inherit; display:inline-flex; align-items:center; justify-content:center; background:#eee; color:#111; box-shadow:0 2px 4px rgba(0,0,0,0.08); transition:box-shadow .25s, transform .25s, border-color .25s; min-width:88px; }
+  .font-color-btn:hover { transform:translateY(-3px); box-shadow:0 4px 10px rgba(0,0,0,0.15); }
+  .font-color-btn.active { border-color:#1c324e; box-shadow:0 0 0 3px rgba(44,77,127,.35); }
+  .font-color-btn.light-text { color:#fff; text-shadow:0 1px 2px rgba(0,0,0,0.55); }
   .thumb-strip { display:flex; gap:.5rem; overflow-x:auto; padding:.85rem .25rem .85rem .25rem; scrollbar-width:thin; margin-top:.35rem; }
     .thumb-strip::-webkit-scrollbar { height:8px; }
     .thumb-strip::-webkit-scrollbar-track { background:transparent; }
@@ -100,6 +106,8 @@
   <div class="bg-picker" id="bgPicker" role="toolbar" aria-labelledby="bgPickerLabel"></div>
   <div id="fontPickerLabel" class="picker-label">Font</div>
   <div id="fontPicker" class="font-buttons" role="toolbar" aria-labelledby="fontPickerLabel"></div>
+  <div id="fontColorPickerLabel" class="picker-label">Font Color</div>
+  <div id="fontColorPicker" class="font-color-buttons" role="toolbar" aria-labelledby="fontColorPickerLabel"></div>
   <div id="logoPickerLabel" class="picker-label">Logos</div>
   <div class="filter-bar" id="groupFilters" role="tablist" aria-labelledby="logoPickerLabel"></div>
   <div id="thumbStrip" class="thumb-strip" role="listbox" aria-labelledby="logoPickerLabel"></div>
@@ -347,6 +355,58 @@
           });
         }
         buildFontButtons();
+
+        // Font color picker
+        const fontColorPicker = document.getElementById('fontColorPicker');
+        const fontColors = [
+          {name:'Gold', hex:'#B7852A'},
+          {name:'Rose Gold', hex:'#E3AB87'},
+          {name:'Black', hex:'#1D1E1B'},
+          {name:'Green', hex:'#1A3F30'},
+          {name:'Cream', hex:'#F8F1DE'},
+          {name:'Grey', hex:'#5A5750'}
+        ];
+        function buildFontColorButtons(){
+          fontColorPicker.innerHTML='';
+          fontColors.forEach((c, idx)=>{
+            const btn = document.createElement('button');
+            btn.type='button';
+            btn.className='font-color-btn'+(idx===0?' active':'');
+            btn.style.background = c.hex;
+            // Determine readable label color vs button background for button text itself
+            const L = luminance(c.hex);
+            const contrastWhite = 1.05 / (L + 0.05);
+            const contrastBlack = (L + 0.05) / 0.05;
+            const labelColor = contrastWhite >= contrastBlack ? '#ffffff' : '#111111';
+            btn.style.color = labelColor;
+            if (labelColor === '#ffffff') btn.classList.add('light-text');
+            btn.textContent = c.name;
+            btn.setAttribute('aria-label', `${c.name} font color ${c.hex}`);
+            btn.addEventListener('click', ()=>{
+              [...fontColorPicker.children].forEach(el=>el.classList.remove('active'));
+              btn.classList.add('active');
+              logoTitle.style.color = c.hex;
+              // Optional: add subtle text-shadow if light color on light bg
+              const bgColor = getComputedStyle(mainDisplay).backgroundColor;
+              // Simple heuristic: if chosen color luminance > .75 and background luminance > .75 add shadow
+              function parseRGB(rgb){ const m=rgb.match(/rgba?\(([^)]+)\)/); if(!m) return [255,255,255]; return m[1].split(',').slice(0,3).map(s=>parseInt(s.trim(),10)); }
+              const [br,bg,bk] = parseRGB(bgColor);
+              const bgLum = luminance('#'+[br,bg,bk].map(v=> v.toString(16).padStart(2,'0')).join(''));
+              if (L > 0.75 && bgLum > 0.75) {
+                logoTitle.style.textShadow = '0 1px 2px rgba(0,0,0,0.45)';
+              } else if (L < 0.2 && bgLum < 0.25) {
+                logoTitle.style.textShadow = '0 1px 2px rgba(255,255,255,0.35)';
+              } else {
+                logoTitle.style.textShadow = 'none';
+              }
+            });
+            fontColorPicker.appendChild(btn);
+            if (idx===0) {
+              logoTitle.style.color = c.hex;
+            }
+          });
+        }
+        buildFontColorButtons();
       }
 
       form.addEventListener('submit', function(e){
